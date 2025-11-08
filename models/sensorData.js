@@ -6,7 +6,7 @@ exports.getAll = async () => {
 };
 
 exports.create = async (sensor_id, value) => {
-    const [result] = await db.query('INSERT INTO SensorData(sensor_id, value) VALUES (?, ?)', [sensor_id, value]);
+    const [result] = await db.query('INSERT INTO sensordata(sensor_id, value) VALUES (?, ?)', [sensor_id, value]);
     return result.insertId;
 };
 
