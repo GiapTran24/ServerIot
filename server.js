@@ -9,10 +9,12 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Routes
+const authRoutes = require('./routes/auth');
 const deviceRoutes = require('./routes/devices');
 const sensorRoutes = require('./routes/sensors');
 const sensorDataRoutes = require('./routes/sensordata');
 
+app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/sensors', sensorRoutes);
 app.use('/api/sensordata', sensorDataRoutes);

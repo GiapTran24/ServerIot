@@ -13,3 +13,76 @@ exports.create = async (sensor_id, value) => {
 exports.delete = async (id) => {
     await db.query('DELETE FROM SensorData WHERE id = ?', [id]);
 };
+
+//Hàm chính: nhận dữ liệu từ ESP32
+exports.createFromDevice = async (device_id, device_name, data) => {
+  try {
+    // 1️⃣ Kiểm tra xem thiết bị có tồn tại không
+    const [deviceRows] = await db.query("SELECT * FROM Devices WHERE device_id = ?", [device_id]);
+    let deviceId = device_id;
+
+    if (deviceRows.length === 0) {
+      // Thiết bị chưa có → tạo mới
+      const [insertDevice] = await db.query(
+        "INSERT INTO Devices (device_id, Name) VALUES (?, ?)",
+        [device_id, device_name || `ESP32_${device_id}`] 
+      );
+      deviceId = insertDevice.insertId || device_id;
+      console.log(`🆕 Tạo mới thiết bị ID=${deviceId}`);
+    }
+
+    // 2️⃣ Lấy danh sách sensors hiện có của thiết bị
+    const [sensors] = await db.query("SELECT * FROM Sensors WHERE DeviceID = ?", [deviceId]);
+    const existingTypes = sensors.map(s => s.Type.toLowerCase());
+
+    // 3️⃣ Danh sách cảm biến cần có (theo dữ liệu ESP32 gửi)
+    const sensorTypes = Object.keys(data); // ["temperature", "humidity", "pressure", "altitude"]
+
+    // 4️⃣ Tạo cảm biến mới nếu chưa có
+    for (const type of sensorTypes) {
+      if (!existingTypes.includes(type)) {
+        await db.query(
+          "INSERT INTO Sensors (DeviceID, Type, Unit) VALUES (?, ?, ?)",
+          [deviceId, type, getUnit(type)]
+        );
+        console.log(`🆕 Tạo cảm biến mới: ${type}`);
+      }
+    }
+
+    // 5️⃣ Ghi dữ liệu
+    const [allSensors] = await db.query("SELECT * FROM Sensors WHERE DeviceID = ?", [deviceId]);
+    const insertIds = [];
+
+    for (const sensor of allSensors) {
+      const type = sensor.Type.toLowerCase();
+      if (data[type] !== undefined && data[type] !== null) {
+        const [result] = await db.query(
+          "INSERT INTO SensorData (SensorID, Value) VALUES (?, ?)",
+          [sensor.ID, data[type]]
+        );
+        insertIds.push(result.insertId);
+      }
+    }
+
+    return { deviceId, insertIds };
+  } catch (error) {
+    console.error("❌ Lỗi khi lưu dữ liệu từ ESP32:", error);
+    throw error;
+  }
+};
+
+// ⚙️ Hàm phụ: xác định đơn vị cho từng loại cảm biến
+function getUnit(type) {
+  switch (type.toLowerCase()) {
+    case "temperature":
+      return "°C";
+    case "humidity":
+      return "%";
+    case "pressure":
+      return "hPa";
+    case "altitude":
+      return "m";
+    default:
+      return "";
+  }
+}
