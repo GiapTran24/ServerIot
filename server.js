@@ -12,7 +12,7 @@ app.use(express.static('public'));
 const authRoutes = require('./routes/auth');
 const deviceRoutes = require('./routes/devices');
 const sensorRoutes = require('./routes/sensors');
-const sensorDataRoutes = require('./routes/sensordata');
+const sensorDataRoutes = require('./routes/sensorData');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);

@@ -4,6 +4,8 @@ const sensorDataController = require('../controllers/sensorData');
 
 router.get('/', sensorDataController.getAll);
 router.post('/', sensorDataController.createFromDevice);
+router.get('/latest', sensorDataController.getLatest);
+router.get('/history', sensorDataController.getHistory);
 // router.post('/', sensorDataController.create);
 router.delete('/:id', sensorDataController.delete);
 

@@ -1,5 +1,28 @@
 const SensorData = require('../models/sensorData');
 
+exports.getLatest = async (req, res) => {
+  try {
+    const data = await SensorData.getLatestData();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+  }
+};
+
+exports.getHistory = async (req, res) => {
+  try {
+    const type = req.query.type;
+    if (!type) return res.status(400).json({ success: false, message: 'Thiếu type' });
+
+    const data = await SensorData.getHistoryByType(type);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+  }
+};
+
 exports.getAll = async (req, res) => {
     try {
         const data = await SensorData.getAll();

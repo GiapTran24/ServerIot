@@ -1,5 +1,29 @@
 const db = require('../db');
 
+exports.getLatestData = async () => {
+  const [rows] = await db.query(`
+    SELECT s.Type, s.Unit, sd.Value, sd.Timestamp
+    FROM SensorData sd
+    JOIN Sensors s ON sd.SensorID = s.ID
+    WHERE sd.ID IN (
+        SELECT MAX(ID) FROM SensorData GROUP BY SensorID
+    )
+  `);
+  return rows;
+};
+
+exports.getHistoryByType = async (type) => {
+  const [rows] = await db.query(`
+    SELECT s.Type, s.Unit, sd.Value, sd.Timestamp
+    FROM SensorData sd
+    JOIN Sensors s ON sd.SensorID = s.ID
+    WHERE s.Type = ?
+    ORDER BY sd.Timestamp DESC
+    LIMIT 10
+  `, [type]);
+  return rows;
+};
+
 exports.getAll = async () => {
     const [rows] = await db.query('SELECT sd.id, s.type, sd.value, sd.timestamp, d.name as device FROM SensorData sd JOIN Sensors s ON sd.sensor_id = s.id JOIN Devices d ON s.device_id = d.id ORDER BY sd.timestamp DESC');
     return rows;

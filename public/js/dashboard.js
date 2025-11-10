@@ -15,97 +15,102 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// 1. Khởi tạo Biểu đồ (Sử dụng dữ liệu tĩnh ban đầu)
-const ctx = document.getElementById('historicalChart').getContext('2d');
-const defaultChartData = {
-    labels: ['1h trước', '45m trước', '30m trước', '15m trước', 'Hiện tại'],
-    datasets: [{
-        label: 'Nhiệt Độ (°C)',
-        data: [27.5, 28.0, 28.5, 28.3, 28.5],
-        borderColor: '#dc3545',
-        tension: 0.3,
-        fill: true,
-        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-        pointRadius: 3
-    }]
-};
-
-const historicalChart = new Chart(ctx, {
-    type: 'line',
-    data: defaultChartData,
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: false
+//  Khởi tạo Biểu đồ
+document.addEventListener('DOMContentLoaded', () => {
+    // Biểu đồ
+    const ctx = document.getElementById('historicalChart').getContext('2d');
+    var defaultChartData = {
+        labels: [],
+        datasets: [{
+            label: 'Chưa có dữ liệu',
+            data: [],
+            borderColor: '#f0f0f0ff',
+            tension: 0.3,
+            fill: true,
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            pointRadius: 3
+        }]
+    };
+    var historicalChart = new Chart(ctx, {
+        type: 'line', data: defaultChartData, options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
             }
         }
-    }
-});
+    });
 
-// 2. Chức năng cập nhật Biểu đồ
-document.querySelectorAll('.dropdown-item').forEach(item => {
-    item.addEventListener('click', function (e) {
-        e.preventDefault();
-        const sensorType = this.getAttribute('data-sensor');
-        const btn = document.getElementById('chart-selector-btn');
+    // Dropdown click
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', async function (e) {
+            e.preventDefault();
+            const sensorType = this.getAttribute('data-sensor');
+            const btn = document.getElementById('chart-selector-btn');
+            let label, color, unit;
+            switch (sensorType) {
+                case 'temperature': label = 'Nhiệt Độ'; color = '#dc3545'; unit = '°C'; break;
+                case 'humidity': label = 'Độ Ẩm'; color = '#0d6efd'; unit = '%'; break;
+                case 'pressure': label = 'Áp Suất'; color = '#ffc107'; unit = 'hPa'; break;
+                case 'altitude': label = 'Độ Cao'; color = '#198754'; unit = 'm'; break;
+                default: return;
+            }
+            btn.textContent = label;
 
-        let label, color, unit;
+            // Lấy dữ liệu từ server
+            const response = await fetch(`http://localhost:5000/api/sensordata/history?type=${sensorType}`);
+            const result = await response.json();
 
-        switch (sensorType) {
-            case 'temp': label = 'Nhiệt Độ'; color = '#dc3545'; unit = '°C'; break;
-            case 'humi': label = 'Độ Ẩm'; color = '#0d6efd'; unit = '%'; break;
-            case 'pres': label = 'Áp Suất'; color = '#ffc107'; unit = 'hPa'; break;
-            case 'alti': label = 'Độ Cao'; color = '#198754'; unit = 'm'; break;
-            default: return;
-        }
-
-        btn.textContent = label;
-
-        // **TODO: Ở đây bạn sẽ gọi API backend để lấy dữ liệu lịch sử (SensorData) theo Type**
-        // Ví dụ: fetch(`/api/sensordata/history?type=${sensorType}`)
-
-        // Cập nhật biểu đồ (Sử dụng dữ liệu giả định để minh họa)
-        const mockData = {
-            'temp': [27.5, 28.0, 28.5, 28.3, 28.5],
-            'humi': [60, 62, 65, 63, 65.2],
-            'pres': [1010, 1011, 1012.3, 1012, 1012.3],
-            'alti': [54.5, 55.0, 55.5, 54.8, 55.0]
-        };
-
-        historicalChart.data.datasets[0].label = `${label} (${unit})`;
-        historicalChart.data.datasets[0].data = mockData[sensorType];
-        historicalChart.data.datasets[0].borderColor = color;
-        historicalChart.data.datasets[0].backgroundColor = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
-        historicalChart.update();
+            if (result.success) {
+                const data = result.data.reverse();
+                historicalChart.data.labels = data.map(d => new Date(d.Timestamp).toLocaleTimeString());
+                historicalChart.data.datasets[0].data = data.map(d => d.Value);
+                historicalChart.data.datasets[0].label = `${label} (${unit})`;
+                historicalChart.data.datasets[0].borderColor = color;
+                historicalChart.update();
+            }
+        });
     });
 });
 
-// 3. Hàm giả lập cập nhật dữ liệu hiện tại
-function updateCurrentData() {
-    // **TODO: Gọi API backend để lấy dữ liệu hiện tại từ SensorData (TOP 1) cho mỗi Type**
-    // Ví dụ: fetch('/api/sensordata/latest')
 
-    const latest = {
-        temp: { value: (Math.random() * 2 + 27).toFixed(1), time: new Date().toLocaleTimeString() },
-        humi: { value: (Math.random() * 5 + 60).toFixed(1), time: new Date().toLocaleTimeString() },
-        pres: { value: (Math.random() * 5 + 1010).toFixed(1), time: new Date().toLocaleTimeString() },
-        alti: { value: (Math.random() * 1 + 54).toFixed(1), time: new Date().toLocaleTimeString() }
-    };
+// cập nhật dữ liệu hiện tại
+async function updateCurrentData() {
+    const response = await fetch('http://localhost:5000/api/sensordata/latest');
+    const result = await response.json();
 
-    document.getElementById('current-temp').textContent = `${latest.temp.value} °C`;
-    document.getElementById('temp-last-updated').textContent = `Cập nhật: ${latest.temp.time}`;
+    if (result.success) {
+        const latest = {};
+        result.data.forEach(item => latest[item.Type] = item);
 
-    document.getElementById('current-humi').textContent = `${latest.humi.value} %`;
-    document.getElementById('humi-last-updated').textContent = `Cập nhật: ${latest.humi.time}`;
+        document.getElementById('current-temp').textContent = `${latest.temperature?.Value ?? '-'} °C`;
+        document.getElementById('temp-last-updated').textContent = `${formatTimestamp(latest.temperature?.Timestamp) ?? '...'}`;
 
-    document.getElementById('current-pres').textContent = `${latest.pres.value} hPa`;
-    document.getElementById('pres-last-updated').textContent = `Cập nhật: ${latest.pres.time}`;
+        document.getElementById('current-humi').textContent = `${latest.humidity?.Value ?? '-'} %`;
+        document.getElementById('humi-last-updated').textContent = `${formatTimestamp(latest.humidity?.Timestamp) ?? '...'}`;
 
-    document.getElementById('current-alti').textContent = `${latest.alti.value} m`;
-    document.getElementById('alti-last-updated').textContent = `Cập nhật: ${latest.alti.time}`;
+        document.getElementById('current-pres').textContent = `${latest.pressure?.Value ?? '-'} hPa`;
+        document.getElementById('pres-last-updated').textContent = `${formatTimestamp(latest.pressure?.Timestamp) ?? '...'}`;
+
+        document.getElementById('current-alti').textContent = `${latest.altitude?.Value ?? '-'} m`;
+        document.getElementById('alti-last-updated').textContent = `${formatTimestamp(latest.altitude?.Timestamp) ?? '...'}`;
+    }
 }
+
+// Hàm format timestamp gọn lại: "dd/mm/yyyy hh:mm:ss"
+function formatTimestamp(ts) {
+    if (!ts) return '-';
+    const date = new Date(ts);
+    return `${date.getDate().toString().padStart(2, '0')}/` +
+        `${(date.getMonth() + 1).toString().padStart(2, '0')}/` +
+        `${date.getFullYear()} ` +
+        `${date.getHours().toString().padStart(2, '0')}:` +
+        `${date.getMinutes().toString().padStart(2, '0')}:` +
+        `${date.getSeconds().toString().padStart(2, '0')}`;
+}
+
 
 // Cập nhật dữ liệu lần đầu và thiết lập cập nhật tự động (ví dụ: mỗi 5 giây)
 updateCurrentData();
