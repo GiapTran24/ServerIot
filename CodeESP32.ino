@@ -56,7 +56,7 @@ void loop() {
     Serial.println("⚠️ Dữ liệu không hợp lệ, bỏ qua gửi.");
   }
 
-  delay(60000); // 1 phút
+  delay(5000); // 5s
 }
 
 void sendData(float temperature, float humidity, float pressure, float altitude) {

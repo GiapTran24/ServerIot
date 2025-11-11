@@ -4,68 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Quản Lý Hệ Thống IoT</title>
+    <!-- Nhúng Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Nhúng Font Awesome (Icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
+    <!-- Nhúng Chart.js cho Biểu Đồ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <style>
-        /* CSS tùy chỉnh */
+        /* CSS Tùy Chỉnh Nâng Cấp */
         body {
-            background-color: #f0f2f5;
+            /* Màu nền nhẹ nhàng, chuyên nghiệp */
+            background-color: #f5f7fa; 
         }
         .navbar {
-            box-shadow: 0 2px 4px rgba(0,0,0,.08);
+            /* Shadow sâu hơn, viền dưới tạo điểm nhấn */
+            box-shadow: 0 4px 10px rgba(0,0,0,.15);
+            border-bottom: 3px solid #1abc9c;
+        }
+        .card {
+            /* Bo tròn lớn hơn cho cảm giác hiện đại */
+            border-radius: 0.8rem; 
+            border: none;
         }
         .card-sensor {
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             cursor: pointer;
-            border-left: 5px solid; /* Để tạo điểm nhấn cho sensor */
+            border-left: 6px solid; /* Viền dày hơn */
         }
         .card-sensor:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15); /* Shadow nổi bật */
         }
-        /* Màu cho từng loại sensor */
-        .temp { border-left-color: #dc3545; } /* Đỏ (Danger) */
-        .humi { border-left-color: #0d6efd; } /* Xanh dương (Primary) */
-        .pres { border-left-color: #ffc107; } /* Vàng (Warning) */
-        .alti { border-left-color: #198754; } /* Xanh lá (Success) */
+        
+        /* Màu cho từng loại sensor (Sử dụng màu sắc Bootstrap tối hơn cho độ tương phản) */
+        .temp { border-left-color: #dc3545; } /* Đỏ Danger */
+        .humi { border-left-color: #0d6efd; } /* Xanh Dương Primary */
+        .pres { border-left-color: #ffc107; } /* Vàng Warning */
+        .alti { border-left-color: #198754; } /* Xanh Lá Success */
         
         .value-large {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 3rem; 
+            font-weight: 800; /* In đậm hơn */
+            color: #343a40; /* Màu chữ tối */
+        }
+        /* Style cho Control Panel mới */
+        .control-panel {
+            background-color: #ffffff;
+            border-radius: 0.8rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+            margin-bottom: 2rem;
+        }
+        /* Style cho khu vực lọc chart */
+        .filter-section {
+            background-color: #ffffff;
+            border-radius: 0.8rem;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
         }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#">
                 <i class="fas fa-satellite-dish me-2"></i>
                 IoT Monitor Dashboard
             </a>
-            <span class="navbar-text text-light">
-                Thiết Bị: <strong id="device-name">Thiết Bị Chính (ID: 1)</strong> 
-            </span>
+            
+            <div class="d-flex align-items-center">
+                
+                <!-- 1. Dropdown Chọn Thiết Bị -->
+                <div class="me-4">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="device-selector-btn">
+                            <i class="fas fa-microchip me-1"></i> Thiết Bị: <strong id="device-name">Thiết Bị Chính (ID: 1)</strong>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <!-- Lưu ý: ID device-name đã được giữ lại và dùng để hiển thị tên thiết bị hiện tại -->
+                            <li><a class="dropdown-item active" href="#" data-device-id="1">Thiết Bị Chính (Phòng 1)</a></li>
+                            <li><a class="dropdown-item" href="#" data-device-id="2">Thiết Bị Khu Vực B</a></li>
+                            <li><a class="dropdown-item" href="#" data-device-id="3">Thiết Bị Khu Vực C</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 2. Thông tin Tài khoản và Đăng xuất -->
+                <span class="navbar-text text-light me-3 d-none d-lg-inline">
+                    <i class="fas fa-user-circle me-1"></i> Chào, <strong id="user-account">Admin@Dashboard</strong>
+                </span>
+                <button id="logout-btn" class="btn btn-danger btn-sm shadow-sm">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
-        <h2 class="mb-4 text-center text-secondary">📊 Dữ Liệu Cảm Biến Hiện Tại</h2>
+    <!-- Main Content -->
+    <div class="container-fluid mt-5">
+        <h2 class="mb-2 text-center text-secondary fw-bolder">📊 Dữ Liệu Cảm Biến Hiện Tại</h2>
+        
+        <!-- 3. Hiển thị Ngày/Giờ -->
+        <p class="text-center text-primary fw-medium mb-4 fs-6" id="current-datetime">Ngày, giờ hiện tại: --</p>
+        
+        <!-- 4. Control Panel (Bật/Tắt, Cập nhật) -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="control-panel">
+                    <h5 class="text-primary mb-3"><i class="fas fa-toggle-on me-2"></i> Các Thao Tác Thiết Bị</h5>
+                    <div class="d-flex flex-wrap gap-3">
+                        <button id="btn-toggle" class="btn btn-lg btn-success shadow-sm">
+                            <i class="fas fa-power-off me-2"></i> Bật Thiết Bị
+                        </button>
+                        <button id="btn-sync" class="btn btn-lg btn-primary shadow-sm">
+                            <i class="fas fa-sync-alt me-2"></i> Yêu cầu Cập nhật Ngay
+                        </button>
+                        <button id="btn-setting" class="btn btn-lg btn-secondary shadow-sm">
+                            <i class="fas fa-sliders-h me-2"></i> Cài đặt Ngưỡng cảnh báo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Dãy các Card hiển thị thông số chính (KPIs) -->
+        <!-- LƯU Ý: Các ID/CLASS (temp, humi, pres, alti, current-temp, etc.) ĐÃ ĐƯỢC GIỮ NGUYÊN -->
         <div class="row">
             
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow card-sensor temp h-100">
+                <div class="card shadow-lg card-sensor temp h-100">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto me-3">
-                                <i class="fas fa-thermometer-half fa-3x text-danger"></i>
+                                <i class="fas fa-thermometer-three-quarters fa-4x text-danger"></i>
                             </div>
                             <div class="col">
-                                <div class="text-uppercase text-danger fw-bold mb-1">Nhiệt Độ</div>
+                                <div class="text-uppercase text-danger fw-bold mb-1 fs-5">Nhiệt Độ</div>
                                 <div class="value-large mb-0" id="current-temp">-- °C</div>
                                 <small class="text-muted" id="temp-last-updated">Cập nhật: --</small>
                             </div>
@@ -75,14 +153,14 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow card-sensor humi h-100">
+                <div class="card shadow-lg card-sensor humi h-100">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto me-3">
-                                <i class="fas fa-tint fa-3x text-primary"></i>
+                                <i class="fas fa-tint fa-4x text-primary"></i>
                             </div>
                             <div class="col">
-                                <div class="text-uppercase text-primary fw-bold mb-1">Độ Ẩm</div>
+                                <div class="text-uppercase text-primary fw-bold mb-1 fs-5">Độ Ẩm</div>
                                 <div class="value-large mb-0" id="current-humi">-- %</div>
                                 <small class="text-muted" id="humi-last-updated">Cập nhật: --</small>
                             </div>
@@ -92,14 +170,14 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow card-sensor pres h-100">
+                <div class="card shadow-lg card-sensor pres h-100">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto me-3">
-                                <i class="fas fa-cloud fa-3x text-warning"></i>
+                                <i class="fas fa-cloud fa-4x text-warning"></i>
                             </div>
                             <div class="col">
-                                <div class="text-uppercase text-warning fw-bold mb-1">Áp Suất</div>
+                                <div class="text-uppercase text-warning fw-bold mb-1 fs-5">Áp Suất</div>
                                 <div class="value-large mb-0" id="current-pres">-- hPa</div>
                                 <small class="text-muted" id="pres-last-updated">Cập nhật: --</small>
                             </div>
@@ -109,14 +187,14 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow card-sensor alti h-100">
+                <div class="card shadow-lg card-sensor alti h-100">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto me-3">
-                                <i class="fas fa-mountain fa-3x text-success"></i>
+                                <i class="fas fa-mountain fa-4x text-success"></i>
                             </div>
                             <div class="col">
-                                <div class="text-uppercase text-success fw-bold mb-1">Độ Cao</div>
+                                <div class="text-uppercase text-success fw-bold mb-1 fs-5">Độ Cao</div>
                                 <div class="value-large mb-0" id="current-alti">-- m</div>
                                 <small class="text-muted" id="alti-last-updated">Cập nhật: --</small>
                             </div>
@@ -125,73 +203,272 @@
                 </div>
             </div>
 
-        </div> ---
+        </div> <!-- End row Cards -->
 
+        ---
+
+        <!-- Biểu đồ và Bộ lọc Dữ liệu Lịch sử (Full Width) -->
         <div class="row mt-4">
 
-            <div class="col-lg-8 mb-4">
-                <div class="card shadow mb-4">
+            <div class="col-lg-12 mb-4">
+                <div class="card shadow-lg mb-4">
                     <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-area me-2"></i>Biểu Đồ Lịch Sử 24 Giờ</h6>
+                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-line me-2"></i>Biểu Đồ Lịch Sử</h6>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="chart-selector-btn">
-                                Nhiệt Độ
+                                Chọn Cảm Biến
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" data-sensor="temp">Nhiệt Độ</a></li>
-                                <li><a class="dropdown-item" href="#" data-sensor="humi">Độ Ẩm</a></li>
-                                <li><a class="dropdown-item" href="#" data-sensor="pres">Áp Suất</a></li>
-                                <li><a class="dropdown-item" href="#" data-sensor="alti">Độ Cao</a></li>
+                                <li><a class="dropdown-item" href="#" data-sensor="temperature">Nhiệt Độ</a></li>
+                                <li><a class="dropdown-item" href="#" data-sensor="humidity">Độ Ẩm</a></li>
+                                <li><a class="dropdown-item" href="#" data-sensor="pressure">Áp Suất</a></li>
+                                <li><a class="dropdown-item" href="#" data-sensor="altitude">Độ Cao</a></li>
                             </ul>
                         </div>
                     </div>
                     <div class="card-body">
-                        <canvas id="historicalChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 mb-4">
-                <div class="card shadow">
-                    <div class="card-header py-3 bg-white">
-                        <h6 class="m-0 fw-bold text-secondary"><i class="fas fa-history me-2"></i>10 Lần Ghi Nhận Gần Nhất</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Thời Gian</th>
-                                        <th>Nhiệt Độ</th>
-                                        <th>Độ Ẩm</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="latest-data-table">
-                                    <tr>
-                                        <td><small>2 phút trước</small></td>
-                                        <td>28.4 °C</td>
-                                        <td>65.0 %</td>
-                                    </tr>
-                                    <tr>
-                                        <td><small>5 phút trước</small></td>
-                                        <td>28.2 °C</td>
-                                        <td>65.1 %</td>
-                                    </tr>
-                                    </tbody>
-                            </table>
+                        <!-- Canvas phải có chiều cao cố định để Chart.js hoạt động tốt trong container responsive -->
+                        <div style="height: 400px;"> 
+                            <canvas id="historicalChart"></canvas>
                         </div>
                     </div>
                 </div>
+                
+                <!-- 5. Khu vực Lọc Dữ Liệu Lịch Sử và Hiển thị kết quả -->
+                <div class="filter-section mt-4">
+                    <h5 class="text-info mb-4"><i class="fas fa-search me-2"></i>Khung Tìm Kiếm Dữ Liệu Lịch Sử</h5>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label fw-medium">Ngày Bắt Đầu</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label fw-medium">Ngày Kết Thúc</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sensorTypeFilter" class="form-label fw-medium">Loại Cảm Biến</label>
+                            <select class="form-select" id="sensorTypeFilter">
+                                <option selected value="all">Tất cả (Nhiệt độ, Độ ẩm, ...)</option>
+                                <option value="temperature">Nhiệt Độ</option>
+                                <option value="humidity">Độ Ẩm</option>
+                                <option value="pressure">Áp Suất</option>
+                                <option value="altitude">Độ Cao</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="btn-search" class="btn btn-warning w-100 shadow">
+                                <i class="fas fa-search me-1"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Kết quả Lọc (Hiển thị thông tin) -->
+                    <div class="mt-4 p-3 border rounded bg-light" id="filter-results-summary">
+                        <h6 class="text-success"><i class="fas fa-chart-bar me-1"></i> Kết quả phân tích dữ liệu lọc:</h6>
+                        <p class="mb-1" id="result-count">Đã tìm thấy **0** điểm dữ liệu.</p>
+                        <p class="mb-1" id="result-temp">Nhiệt độ (TB/Cao nhất/Thấp nhất): --</p>
+                        <p class="mb-1" id="result-humi">Độ ẩm (TB/Cao nhất/Thấp nhất): --</p>
+                        <p class="mb-0 text-muted">Nhấn nút "Tìm kiếm" để tải dữ liệu lịch sử và xem tóm tắt.</p>
+                    </div>
+                </div>
             </div>
 
-        </div> </div> <footer class="bg-light p-3 mt-5 border-top">
-        <div class="container-fluid text-center text-muted">
-            <p class="mb-0">© 2025 Hệ Thống Quản Lý IoT. Sử dụng Bootstrap 5 và Chart.js.</p>
+        </div> <!-- End row Biểu đồ và Bộ lọc -->
+
+    </div> <!-- End container-fluid -->
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light p-3 mt-5">
+        <div class="container-fluid text-center">
+            <p class="mb-0">© 2025 Hệ Thống Quản Lý IoT. Thiết kế bởi Gemini, sử dụng Bootstrap 5 và Chart.js.</p>
         </div>
     </footer>
 
+    <!-- Nhúng Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/dashboard.js"></script>
+    
+    <!-- Script Xử lý Logic (Đảm bảo ID được giữ nguyên) -->
+    <script>
+        // =======================================================
+        // PHẦN LOGIC JAVASCRIPT: TƯƠNG TÁC VỚI UI (GIỮ NGUYÊN ID)
+        // =======================================================
+
+        const CHART_COLORS = {
+            'temperature': { color: '#e74c3c', bg: 'rgba(231, 76, 60, 0.1)' },
+            'humidity': { color: '#3498db', bg: 'rgba(52, 152, 219, 0.1)' },
+            'pressure': { color: '#f1c40f', bg: 'rgba(241, 196, 15, 0.1)' },
+            'altitude': { color: '#2ecc71', bg: 'rgba(46, 204, 113, 0.1)' }
+        };
+
+        // 1. Khởi tạo Biểu đồ (ID: historicalChart)
+        const ctx = document.getElementById('historicalChart').getContext('2d');
+        let historicalChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1h trước', '45m trước', '30m trước', '15m trước', 'Hiện tại'],
+                datasets: [{
+                    label: 'Nhiệt Độ (°C)',
+                    data: [27.5, 28.0, 28.5, 28.3, 28.5],
+                    borderColor: CHART_COLORS.temperature.color,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: CHART_COLORS.temperature.bg,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } },
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+        // 2. Cập nhật Ngày/Giờ hiện tại (ID: current-datetime)
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('current-datetime').textContent = `Ngày, giờ hiện tại: ${now.toLocaleDateString('vi-VN', options)}`;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000); 
+
+        // 3. Xử lý logic Device Selector (ID: device-selector-btn, device-name)
+        document.querySelectorAll('.dropdown-menu a').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.dropdown-menu a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+                
+                const deviceName = this.textContent;
+                // Cập nhật tên thiết bị trong navbar (ID: device-name)
+                document.getElementById('device-name').textContent = deviceName; 
+                
+                // Cập nhật button chính (ID: device-selector-btn)
+                document.getElementById('device-selector-btn').innerHTML = `<i class="fas fa-microchip me-1"></i> Thiết Bị: <strong>${deviceName}</strong>`;
+
+                console.log(`Đã chọn thiết bị ID: ${this.getAttribute('data-device-id')}. Cần gọi API tải dữ liệu.`);
+                updateCurrentData(); 
+            });
+        });
+
+
+        // 4. Hàm giả lập cập nhật dữ liệu hiện tại (Sử dụng các ID KPI: current-temp, current-humi, etc.)
+        function updateCurrentData() {
+            // **TODO: Thay thế bằng Fetch API gọi /api/latest?device_id=X**
+            const latest = {
+                temp: { value: (Math.random() * 2 + 27).toFixed(1), time: new Date().toLocaleTimeString() },
+                humi: { value: (Math.random() * 5 + 60).toFixed(1), time: new Date().toLocaleTimeString() },
+                pres: { value: (Math.random() * 5 + 1010).toFixed(1), time: new Date().toLocaleTimeString() },
+                alti: { value: (Math.random() * 1 + 54).toFixed(1), time: new Date().toLocaleTimeString() }
+            };
+
+            document.getElementById('current-temp').textContent = `${latest.temp.value} °C`;
+            document.getElementById('temp-last-updated').textContent = `Cập nhật: ${latest.temp.time}`;
+            
+            document.getElementById('current-humi').textContent = `${latest.humi.value} %`;
+            document.getElementById('humi-last-updated').textContent = `Cập nhật: ${latest.humi.time}`;
+
+            document.getElementById('current-pres').textContent = `${latest.pres.value} hPa`;
+            document.getElementById('pres-last-updated').textContent = `Cập nhật: ${latest.pres.time}`;
+            
+            document.getElementById('current-alti').textContent = `${latest.alti.value} m`;
+            document.getElementById('alti-last-updated').textContent = `Cập nhật: ${latest.alti.time}`;
+        }
+        updateCurrentData();
+        setInterval(updateCurrentData, 5000); 
+
+
+        // 5. Xử lý logic Biểu đồ (ID: chart-selector-btn)
+        document.querySelectorAll('.dropdown-menu a[data-sensor]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sensorType = this.getAttribute('data-sensor');
+                const labelMap = { 
+                    'temperature': 'Nhiệt Độ', 'humidity': 'Độ Ẩm', 
+                    'pressure': 'Áp Suất', 'altitude': 'Độ Cao' 
+                };
+                const unitMap = { 
+                    'temperature': '°C', 'humidity': '%', 
+                    'pressure': 'hPa', 'altitude': 'm' 
+                };
+
+                document.getElementById('chart-selector-btn').textContent = labelMap[sensorType];
+
+                // **TODO: Gọi API lấy dữ liệu lịch sử theo sensorType**
+
+                // Cập nhật biểu đồ (Giả lập dữ liệu)
+                const mockData = {
+                    'temperature': [27.5, 28.0, 28.5, 28.3, 28.5, 29.0, 29.1],
+                    'humidity': [60, 62, 65, 63, 65.2, 66, 65.5],
+                    'pressure': [1010, 1011, 1012.3, 1012, 1012.3, 1013, 1012.8],
+                    'altitude': [54.5, 55.0, 55.5, 54.8, 55.0, 55.2, 55.1]
+                };
+                const mockLabels = ['4h trước', '3h trước', '2h trước', '1h trước', '30m trước', '15m trước', 'Hiện tại'];
+
+                historicalChart.data.labels = mockLabels;
+                historicalChart.data.datasets[0].label = `${labelMap[sensorType]} (${unitMap[sensorType]})`;
+                historicalChart.data.datasets[0].data = mockData[sensorType];
+                historicalChart.data.datasets[0].borderColor = CHART_COLORS[sensorType].color;
+                historicalChart.data.datasets[0].backgroundColor = CHART_COLORS[sensorType].bg;
+                historicalChart.update();
+            });
+        });
+
+
+        // 6. Xử lý logic Bộ lọc dữ liệu (ID: btn-search, filter-results-summary)
+        document.getElementById('btn-search').addEventListener('click', function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const sensorTypeFilter = document.getElementById('sensorTypeFilter').value;
+
+            if (!startDate || !endDate) {
+                document.getElementById('filter-results-summary').innerHTML = '<h6 class="text-danger"><i class="fas fa-times-circle me-1"></i> Vui lòng chọn cả Ngày Bắt Đầu và Ngày Kết Thúc.</h6>';
+                return;
+            }
+
+            // **TODO: GỌI API BACKEND: fetch(`/api/history/filter?start=${startDate}&end=${endDate}&type=${sensorTypeFilter}`)**
+            console.log(`Đang tìm kiếm dữ liệu từ ${startDate} đến ${endDate} cho loại: ${sensorTypeFilter}`);
+
+            // Giả lập kết quả
+            const mockResults = {
+                count: Math.floor(Math.random() * 5000) + 1000,
+                temp: { avg: (Math.random() * 3 + 27).toFixed(1), max: (Math.random() * 1 + 30).toFixed(1), min: (Math.random() * 1 + 25).toFixed(1) },
+                humi: { avg: (Math.random() * 5 + 60).toFixed(1), max: (Math.random() * 1 + 68).toFixed(1), min: (Math.random() * 1 + 55).toFixed(1) }
+            };
+            
+            // Cập nhật kết quả vào ID: filter-results-summary và các ID con
+            document.getElementById('filter-results-summary').innerHTML = `
+                <h6 class="text-success"><i class="fas fa-chart-bar me-1"></i> Kết quả phân tích dữ liệu lọc:</h6>
+                <p class="mb-1" id="result-count">Đã tìm thấy **${mockResults.count}** điểm dữ liệu.</p>
+                <p class="mb-1" id="result-temp">Nhiệt độ (TB/Cao nhất/Thấp nhất): **${mockResults.temp.avg}°C** / **${mockResults.temp.max}°C** / **${mockResults.temp.min}°C**</p>
+                <p class="mb-1" id="result-humi">Độ ẩm (TB/Cao nhất/Thấp nhất): **${mockResults.humi.avg}%** / **${mockResults.humi.max}%** / **${mockResults.humi.min}%**</p>
+                <p class="mb-0 text-muted">Dữ liệu được lấy từ ${startDate} đến ${endDate}.</p>
+            `;
+        });
+        
+        // 7. Xử lý các button điều khiển (ID: btn-toggle, btn-sync, btn-setting)
+        document.getElementById('btn-toggle').addEventListener('click', function() {
+            const isOff = this.textContent.includes('Tắt');
+            if (isOff) {
+                this.innerHTML = '<i class="fas fa-power-off me-2"></i> Bật Thiết Bị';
+                this.classList.remove('btn-danger');
+                this.classList.add('btn-success');
+                console.log('Đã gửi lệnh: BẬT Thiết Bị');
+            } else {
+                this.innerHTML = '<i class="fas fa-power-off me-2"></i> Tắt Thiết Bị';
+                this.classList.remove('btn-success');
+                this.classList.add('btn-danger');
+                console.log('Đã gửi lệnh: TẮT Thiết Bị');
+            }
+        });
+
+        document.getElementById('btn-sync').addEventListener('click', () => console.log('Đã gửi lệnh: Yêu cầu cập nhật Thông số.'));
+        document.getElementById('btn-setting').addEventListener('click', () => console.log('Mở Modal Cài đặt thông số nâng cao.'));
+        document.getElementById('logout-btn').addEventListener('click', () => console.log('Đã thực hiện Đăng xuất.'));
+    </script>
 
 </body>
 </html>

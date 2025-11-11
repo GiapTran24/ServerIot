@@ -99,16 +99,20 @@ async function updateCurrentData() {
     }
 }
 
-// Hàm format timestamp gọn lại: "dd/mm/yyyy hh:mm:ss"
 function formatTimestamp(ts) {
     if (!ts) return '-';
     const date = new Date(ts);
-    return `${date.getDate().toString().padStart(2, '0')}/` +
-        `${(date.getMonth() + 1).toString().padStart(2, '0')}/` +
-        `${date.getFullYear()} ` +
-        `${date.getHours().toString().padStart(2, '0')}:` +
-        `${date.getMinutes().toString().padStart(2, '0')}:` +
-        `${date.getSeconds().toString().padStart(2, '0')}`;
+
+    // Format theo múi giờ Việt Nam
+    return new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        // day: '2-digit',
+        // month: '2-digit',
+        // year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        // second: '2-digit'
+    }).format(date);
 }
 
 

@@ -9,8 +9,9 @@ CREATE TABLE Accounts (
 
 CREATE TABLE Devices (
     ID INT AUTO_INCREMENT PRIMARY KEY,
-    device_id INT,
     Name NVARCHAR(100) NOT NULL,
+    Status VARCHAR(20) NOT NULL,
+    device_id INT,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
