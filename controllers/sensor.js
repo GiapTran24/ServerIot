@@ -1,4 +1,4 @@
-const Sensor = require('../models/Sensor');
+const Sensor = require('../models/sensor');
 
 exports.getAll = async (req, res) => {
     try {

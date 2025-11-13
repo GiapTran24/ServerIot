@@ -1,4 +1,5 @@
 const SensorData = require('../models/sensorData');
+const db = require('../db');
 
 exports.getLatest = async (req, res) => {
   try {
@@ -71,5 +72,36 @@ exports.delete = async (req, res) => {
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getFilteredData = async (req, res) => {
+    try {
+        const { date, start, end, type } = req.query;
+
+        // Ghép thành khoảng thời gian đầy đủ
+        const startTime = `${date} ${start}:00`;
+        const endTime = `${date} ${end}:00`;
+
+        let query = `
+            SELECT sd.Timestamp AS timestamp, s.Type AS type, sd.Value AS value, s.Unit AS unit
+            FROM SensorData sd
+            JOIN Sensors s ON sd.SensorID = s.ID
+            WHERE sd.Timestamp BETWEEN ? AND ?
+        `;
+        const params = [startTime, endTime];
+
+        if (type !== 'all') {
+            query += ` AND s.Type = ?`;
+            params.push(type);
+        }
+
+        query += ` ORDER BY sd.Timestamp ASC`;
+
+        const [rows] = await db.query(query, params);
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };

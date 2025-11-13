@@ -6,6 +6,7 @@ router.get('/', sensorDataController.getAll);
 router.post('/', sensorDataController.createFromDevice);
 router.get('/latest', sensorDataController.getLatest);
 router.get('/history', sensorDataController.getHistory);
+router.get('/filter', sensorDataController.getFilteredData);
 // router.post('/', sensorDataController.create);
 router.delete('/:id', sensorDataController.delete);
 

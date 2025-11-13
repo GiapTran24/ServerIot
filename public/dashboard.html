@@ -95,6 +95,10 @@
             /* Giới hạn chiều cao cho bảng cuộn */
             overflow-y: auto;
         }
+        #clock {
+        font-size: 2rem;
+        letter-spacing: 2px;
+        }
     </style>
 </head>
 
@@ -108,7 +112,7 @@
             </a>
             <div class="d-flex align-items-center">
                 <span class="navbar-text text-light me-3 d-none d-lg-inline">
-                    <i class="fas fa-user-circle me-1"></i> <strong id="user-account">giaptran</strong>
+                    <i class="fas fa-user-circle me-1"></i> <strong id="user-account">@Accounts</strong>
                 </span>
                 <button id="logout-btn" class="btn btn-danger btn-sm shadow-sm">
                     <i class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -119,18 +123,25 @@
 
     <div class="container-fluid mt-4">
         <h2 class="mb-1 text-center text-primary">Dữ Liệu Cảm Biến</h2>
-        <h3 class="mb-5 text-center text-secondary">11/11/2025</h3>
+        <h3 id="clock" class="mb-5 text-center text-secondary">--:--:--</h3>
 
         <div class="row mb-4">
             <div class="col-12">
                 <div class="control-panel">
                     <h5 class="text-secondary mb-3"><i class="fas fa-cogs me-2"></i>Điều Khiển Thiết Bị</h5>
+
+                    <div class="mb-3">
+                        <select id="deviceSelect" class="form-select">
+                            <option value="">Đang tải danh sách thiết bị...</option>
+                        </select>
+                    </div>
+
                     <div class="d-flex flex-wrap gap-3">
                         <button id="btn-sync" class="btn btn-lg btn-primary shadow-sm">
                             <i class="fas fa-sync-alt me-2"></i> Cập nhật Thông số
                         </button>
-                        <button id="btn-toggle" class="btn btn-lg btn-success shadow-sm">
-                            <i class="fas fa-power-off me-2"></i> Bật Thiết Bị
+                        <button id="btn-toggle" class="btn btn-lg btn-danger shadow-sm">
+                            <i class="fas fa-toggle-off me-2"></i> Đang tải trạng thái
                         </button>
                     </div>
                 </div>
@@ -149,7 +160,6 @@
                             <div class="col">
                                 <div class="text-uppercase text-danger fw-bold mb-1 fs-5">Nhiệt Độ</div>
                                 <div class="value-large mb-0" id="current-temp">-- °C</div>
-                                <small class="text-muted" id="temp-last-updated">Cập nhật: --</small>
                             </div>
                         </div>
                     </div>
@@ -166,7 +176,6 @@
                             <div class="col">
                                 <div class="text-uppercase text-primary fw-bold mb-1 fs-5">Độ Ẩm</div>
                                 <div class="value-large mb-0" id="current-humi">-- %</div>
-                                <small class="text-muted" id="humi-last-updated">Cập nhật: --</small>
                             </div>
                         </div>
                     </div>
@@ -183,7 +192,6 @@
                             <div class="col">
                                 <div class="text-uppercase text-warning fw-bold mb-1 fs-5">Áp Suất</div>
                                 <div class="value-large mb-0" id="current-pres">-- hPa</div>
-                                <small class="text-muted" id="pres-last-updated">Cập nhật: --</small>
                             </div>
                         </div>
                     </div>
@@ -200,7 +208,6 @@
                             <div class="col">
                                 <div class="text-uppercase text-success fw-bold mb-1 fs-5">Độ Cao</div>
                                 <div class="value-large mb-0" id="current-alti">-- m</div>
-                                <small class="text-muted" id="alti-last-updated">Cập nhật: --</small>
                             </div>
                         </div>
                     </div>
@@ -323,7 +330,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/main.js"></script>
 
 </body>
 

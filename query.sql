@@ -10,7 +10,7 @@ CREATE TABLE Accounts (
 CREATE TABLE Devices (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     Name NVARCHAR(100) NOT NULL,
-    Status VARCHAR(20) NOT NULL,
+    Status VARCHAR(20) dèafault 'ON',
     device_id INT,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
