@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ESPmDNS.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <Adafruit_BMP085.h>
@@ -17,7 +18,8 @@ DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 
 // API Node.js
-const char* serverName = "http://192.168.1.198:5000/api/sensordata";
+// const char* serverName = "http://192.168.1.198:5000/api/sensordata";
+const char* serverName = "http://espserver.local:5000/api/sensordata";
 #define TIMELOAD 10000  // 10s
 
 // ID và tên thiết bị
@@ -41,6 +43,14 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\n✅ WiFi đã kết nối!");
+
+  /// Khởi tạo mDNS
+  if (!MDNS.begin("esp32client")) {
+    Serial.println("❌ Lỗi khởi tạo mDNS");
+  } else {
+      Serial.println("✔ mDNS ESP32 hoạt động!");
+  }
+
 }
 
 void loop() {
@@ -113,7 +123,8 @@ void sendData(float temperature, float humidity, float pressure, float altitude)
 String getDeviceStatus() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    String url = String("http://192.168.1.198:5000/api/devices/") + DEVICE_ID;
+    // String url = String("http://192.168.1.198:5000/api/devices/") + DEVICE_ID;
+    String url = String("http://espserver.local:5000/api/devices/") + DEVICE_ID;
 
     http.begin(url);
     int httpCode = http.GET();
