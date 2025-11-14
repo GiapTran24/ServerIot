@@ -86,7 +86,7 @@ exports.getFilteredData = async (req, res) => {
         const endTime = `${date} ${end}:00`;
 
         let query = `
-            SELECT sd.Timestamp AS timestamp, s.Type AS type, sd.Value AS value, s.Unit AS unit
+            SELECT sd.ID, sd.Timestamp AS timestamp, s.Type AS type, sd.Value AS value, s.Unit AS unit
             FROM SensorData sd
             JOIN Sensors s ON sd.SensorID = s.ID
             WHERE s.DeviceID = ?

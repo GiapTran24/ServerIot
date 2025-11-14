@@ -18,6 +18,7 @@ Adafruit_BMP085 bmp;
 
 // API Node.js
 const char* serverName = "http://192.168.1.198:5000/api/sensordata";
+#define TIMELOAD 10000  // 10s
 
 // ID và tên thiết bị
 const int DEVICE_ID = 1;
@@ -48,15 +49,32 @@ void loop() {
   float humidity = dht.readHumidity();
   float pressure = bmp.readPressure() / 100.0; // hPa
   float altitude = bmp.readAltitude(); // m
+  String sv_status = getDeviceStatus();
 
-  // Kiểm tra dữ liệu hợp lệ trước khi gửi
+  
+  // ⭐ IN RA TẤT CẢ GIÁ TRỊ SENSOR + TRẠNG THÁI
+  Serial.println("========== SENSOR DATA ==========");
+  Serial.print("🌡 Nhiệt độ: "); Serial.println(temperature);
+  Serial.print("💧 Độ ẩm: ");   Serial.println(humidity);
+  Serial.print("📦 Áp suất: "); Serial.println(pressure);
+  Serial.print("⛰ Độ cao: ");   Serial.println(altitude);
+  Serial.print("🔌 Trạng thái server: "); Serial.println(sv_status);
+  Serial.println("=================================");
+  Serial.println();
+
+  // Kiểm tra dữ liệu hợp lệ trước khi gửi len server
   if (!isnan(temperature) && !isnan(humidity) && !isnan(pressure) && !isnan(altitude)) {
+    if(sv_status == "OFF") {
+      Serial.println("⛔ Thiết bị đang bị tắt từ server → ngừng gửi dữ liệu.");
+      delay(5000); // 5s
+      return;
+    }
     sendData(temperature, humidity, pressure, altitude);
   } else {
     Serial.println("⚠️ Dữ liệu không hợp lệ, bỏ qua gửi.");
   }
 
-  delay(5000); // 5s
+  delay(TIMELOAD); // Chờ trước khi gửi lần tiếp theo
 }
 
 void sendData(float temperature, float humidity, float pressure, float altitude) {
@@ -89,4 +107,29 @@ void sendData(float temperature, float humidity, float pressure, float altitude)
   } else {
     Serial.println("⚠️ WiFi chưa kết nối!");
   }
+}
+
+
+String getDeviceStatus() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = String("http://192.168.1.198:5000/api/devices/") + DEVICE_ID;
+
+    http.begin(url);
+    int httpCode = http.GET();
+
+    if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println("📥 Trạng thái nhận được: " + payload);
+
+      if (payload.indexOf("\"Status\":\"OFF\"") > 0) {
+        return "OFF";
+      } else {
+        return "ON";
+      }
+    }
+
+    http.end();
+  }
+  return "OFF"; // fallback: an toàn -> nếu lỗi coi như OFF
 }

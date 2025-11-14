@@ -39,7 +39,7 @@ async function fetchDeviceStatus() {
     }
 }
 
-    
+
 // cập nhật dữ liệu hiện tại
 async function updateCurrentData() {
     const response = await fetch(`http://localhost:5000/api/sensordata/latest/${gDeviceID}`);
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // change device select
-document.getElementById('deviceSelect').addEventListener('change', async function() {
+document.getElementById('deviceSelect').addEventListener('change', async function () {
     gDeviceID = parseInt(this.value);
 
     // 1. Cập nhật trạng thái nút Bật/Tắt
@@ -353,13 +353,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Tạo nội dung bảng
             tableBody.innerHTML = data.map(item => `
-                <tr>
+                <tr data-id="${item.ID}" class="data-row">
+                    <td>${item.ID}</td>
                     <td>${formatTimestamp(item.timestamp)}</td>
                     <td>${item.type}</td>
                     <td>${item.value.toFixed(2)}</td>
                     <td>${item.unit || '-'}</td>
+                    <td>
+                        <button class="btn-delete" style="display:none; color:white; background:red; border:none; border-radius:4px;">
+                            Xóa
+                        </button>
+                    </td>
                 </tr>
             `).join('');
+
+            document.querySelectorAll(".data-row").forEach(row => {
+                row.addEventListener("click", () => {
+                    // Ẩn nút xóa của tất cả hàng khác
+                    document.querySelectorAll(".btn-delete").forEach(btn => {
+                        btn.style.display = "none";
+                    });
+
+                    // Hiện nút xóa của hàng được click
+                    const btnDelete = row.querySelector(".btn-delete");
+                    btnDelete.style.display = "inline-block";
+                });
+            });
+
+
+            document.querySelectorAll(".btn-delete").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    e.stopPropagation(); // Không để click row làm ẩn nút
+
+                    const row = btn.closest("tr");
+                    const id = row.dataset.id;
+
+                    if (!confirm("Bạn có chắc muốn xóa không?")) return;
+
+                    try {
+                        const res = await fetch(`http://localhost:5000/api/sensordata/${id}`, {
+                             method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: 'Deleted data' })
+                        });
+                        if (!res.ok) throw new Error("Xóa thất bại");
+                        alert("✅ Xóa dữ liệu thành công!");
+
+                        row.remove(); // Xóa khỏi giao diện
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                });
+            });
 
         } catch (err) {
             console.error(err);
