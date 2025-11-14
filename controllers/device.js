@@ -9,6 +9,16 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.get = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const device = await Device.get(id);
+        res.json(device);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.create = async (req, res) => {
     const { name } = req.body;
     try {

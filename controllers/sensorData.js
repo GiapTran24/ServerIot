@@ -2,8 +2,9 @@ const SensorData = require('../models/sensorData');
 const db = require('../db');
 
 exports.getLatest = async (req, res) => {
+  const { id } = req.params;
   try {
-    const data = await SensorData.getLatestData();
+    const data = await SensorData.getLatestData(id);
     res.json({ success: true, data });
   } catch (err) {
     console.error(err);
@@ -13,10 +14,12 @@ exports.getLatest = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
   try {
+    const deviceId = req.query.device_id;
     const type = req.query.type;
     if (!type) return res.status(400).json({ success: false, message: 'Thiếu type' });
+    if (!deviceId) return res.status(400).json({ success: false, message: 'Thiếu device id' });
 
-    const data = await SensorData.getHistoryByType(type);
+    const data = await SensorData.getHistoryByType(deviceId, type);
     res.json({ success: true, data });
   } catch (err) {
     console.error(err);
@@ -77,9 +80,8 @@ exports.delete = async (req, res) => {
 
 exports.getFilteredData = async (req, res) => {
     try {
-        const { date, start, end, type } = req.query;
+        const { date, start, end, type, deviceId } = req.query;
 
-        // Ghép thành khoảng thời gian đầy đủ
         const startTime = `${date} ${start}:00`;
         const endTime = `${date} ${end}:00`;
 
@@ -87,9 +89,11 @@ exports.getFilteredData = async (req, res) => {
             SELECT sd.Timestamp AS timestamp, s.Type AS type, sd.Value AS value, s.Unit AS unit
             FROM SensorData sd
             JOIN Sensors s ON sd.SensorID = s.ID
-            WHERE sd.Timestamp BETWEEN ? AND ?
+            WHERE s.DeviceID = ?
+              AND sd.Timestamp BETWEEN ? AND ?
         `;
-        const params = [startTime, endTime];
+
+        const params = [deviceId, startTime, endTime];
 
         if (type !== 'all') {
             query += ` AND s.Type = ?`;

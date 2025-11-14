@@ -1,6 +1,7 @@
 const AUTH_TOKEN_KEY = 'iot_auth_token';
 const INDEX_URL = 'index.html';
 var gDeviceID = null;
+var gDeviceStatus = null;
 
 async function fetchDeviceList() {
     if (!window.deviceList) {
@@ -26,22 +27,22 @@ async function fetchDeviceList() {
 }
 
 // 🧩 Lấy trạng thái hiện tại từ API
-    async function fetchDeviceStatus() {
-        try {
-            const res = await fetch(`http://localhost:5000/api/devices/${deviceId}`);
-            if (!res.ok) throw new Error('Không lấy được trạng thái thiết bị');
-            const data = await res.json();
-            currentStatus = data.status || 'OFF';
-            updateButtonUI();
-        } catch (err) {
-            console.error(err);
-        }
+async function fetchDeviceStatus() {
+    try {
+        const res = await fetch(`http://localhost:5000/api/devices/${gDeviceID}`);
+        if (!res.ok) throw new Error('Không lấy được trạng thái thiết bị');
+        const data = await res.json();
+        gDeviceStatus = data.Status || 'OFF';
+        updateButtonUI();
+    } catch (err) {
+        console.error(err);
     }
+}
 
     
 // cập nhật dữ liệu hiện tại
 async function updateCurrentData() {
-    const response = await fetch('http://localhost:5000/api/sensordata/latest');
+    const response = await fetch(`http://localhost:5000/api/sensordata/latest/${gDeviceID}`);
     const result = await response.json();
 
     if (result.success) {
@@ -147,44 +148,42 @@ document.getElementById('deviceSelect').addEventListener('change', async functio
 
 
 
-
+// Hàm cập nhật giao diện
+function updateButtonUI() {
+    const btn = document.getElementById('btn-toggle');
+    if (gDeviceStatus === 'ON') {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="fas fa-toggle-on me-2"></i> Đang hoạt động';
+    } else {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-danger');
+        btn.innerHTML = '<i class="fas fa-toggle-off me-2"></i> Thiết bị đang tắt';
+    }
+}
 
 
 
 // Dieu khien thiet bi:
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const btn = document.getElementById('btn-toggle');
     const updateData = document.getElementById('btn-sync');
 
-    // 🧠 Giả sử ID thiết bị là 1 (hoặc bạn lấy động từ DB hay localStorage)
-    const deviceId = 1;
-    let currentStatus = 'OFF'; // Mặc định ban đầu
-
-    // Hàm cập nhật giao diện
-    function updateButtonUI() {
-        if (currentStatus === 'ON') {
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-danger');
-            btn.innerHTML = '<i class="fas fa-toggle-off me-2"></i> Thiết bị đang tắt';
-        } else {
-            btn.classList.remove('btn-danger');
-            btn.classList.add('btn-success');
-            btn.innerHTML = '<i class="fas fa-toggle-on me-2"></i> Đang hoạt động';
-        }
-    }
+    await fetchDeviceStatus();
+    updateButtonUI();
 
     // nhan nut yeu cau cap nhat du lieu:
     updateData.addEventListener('click', async () => {
-        await updateCurrentData();
-        alert('Dữ liệu hiện tại đã được cập nhật!');
+        await reloadAll();
+        alert('✅ Reload hoàn tất! Dữ liệu đã được cập nhật.');
     });
 
     // 🧩 Khi nhấn nút Bật/Tắt
     btn.addEventListener('click', async () => {
-        const newStatus = currentStatus === 'ON' ? 'OFF' : 'ON';
+        const newStatus = gDeviceStatus === 'ON' ? 'OFF' : 'ON';
 
         try {
-            const res = await fetch(`http://localhost:5000/api/devices/${deviceId}`, {
+            const res = await fetch(`http://localhost:5000/api/devices/${gDeviceID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -194,16 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await res.json();
 
             console.log(result.message);
-            currentStatus = newStatus;
+            gDeviceStatus = newStatus;
             updateButtonUI();
         } catch (err) {
             console.error(err);
             alert('Có lỗi khi cập nhật trạng thái thiết bị');
         }
     });
-
-    // Gọi 1 lần khi load trang để hiển thị trạng thái hiện tại
-    fetchDeviceStatus();
 });
 
 
@@ -259,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = label;
 
             // Lấy dữ liệu từ server
-            const response = await fetch(`http://localhost:5000/api/sensordata/history?type=${sensorType}`);
+            const response = await fetch(`http://localhost:5000/api/sensordata/history?device_id=${gDeviceID}&type=${sensorType}`);
             const result = await response.json();
 
             if (result.success) {
@@ -324,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Xử lý khi submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        form.dataset.filtered = "true";  // Đánh dấu đã lọc
 
         // Lấy giá trị từ form
         const date = document.getElementById('filterDate').value;
@@ -340,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Gọi API backend
-            const res = await fetch(`http://localhost:5000/api/sensordata/filter?date=${date}&start=${start}&end=${end}&type=${type}`);
+            const res = await fetch(`http://localhost:5000/api/sensordata/filter?deviceId=${gDeviceID}&date=${date}&start=${start}&end=${end}&type=${type}`);
             if (!res.ok) throw new Error("Lỗi khi tải dữ liệu từ server");
             const data = await res.json();
 
@@ -374,3 +371,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
+async function reloadAll() {
+    console.log("🔄 Reloading all data...");
+
+    // 1. Reload trạng thái thiết bị
+    await fetchDeviceStatus();
+
+    // 2. Reload dữ liệu hiện tại
+    await updateCurrentData();
+
+    // 3. Reload biểu đồ nếu có sensor đang được chọn
+    const btn = document.getElementById('chart-selector-btn');
+    const currentSensor = btn.getAttribute('data-sensor');
+    if (currentSensor) {
+        updateChart(currentSensor);  // Bạn đã có hàm này
+    }
+
+    // 4. Reload lại filter table nếu đã filter trước đó
+    const form = document.getElementById('data-filter-form');
+    if (form.dataset.filtered === "true") {
+        form.dispatchEvent(new Event('submit')); // Tự submit lại form
+    }
+
+    console.log("✅ Reload hoàn tất.");
+}
