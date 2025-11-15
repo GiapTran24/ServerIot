@@ -10,6 +10,13 @@ exports.get = async (id) => {
     return rows[0];
 };
 
+exports.getStatusByDeviceId = async (deviceId) => {
+    const [rows] = await db.query(
+        "SELECT Status FROM Devices WHERE ID = ?",
+        [deviceId]
+    );
+    return rows.length ? rows[0] : null;
+};
 
 exports.create = async (name) => {
     const [result] = await db.query('INSERT INTO Devices(name) VALUES (?)', [name]);

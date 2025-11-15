@@ -1,5 +1,4 @@
 const express = require('express');
-const bonjour = require('bonjour')();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
@@ -26,13 +25,4 @@ const PORT = process.env.PORT || 5000;
 // ⭐ BẮT BUỘC phải listen server trước
 const server = app.listen(PORT, () => {
     console.log(`🚀 Server chạy tại cổng ${PORT}`);
-    
-    // ⭐ Chỉ publish mDNS sau khi server đã chạy
-    bonjour.publish({
-        name: 'espserver',
-        type: 'http',
-        port: PORT,
-    });
-
-    console.log("🌐 mDNS ready → truy cập: http://espserver.local:" + PORT);
 });

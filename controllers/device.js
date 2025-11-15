@@ -29,6 +29,23 @@ exports.create = async (req, res) => {
     }
 };
 
+exports.getDeviceStatus = async (req, res) => {
+    try {
+        const deviceId = req.params.deviceId;
+
+        const result = await Device.getStatusByDeviceId(deviceId);
+
+        if (!result) {
+            return res.status(404).json({ error: "Device not found" });
+        }
+
+        res.json({ status: result.Status });
+    } catch (err) {
+        console.error("Get Status Error:", err);
+        res.status(500).json({ error: "Server Error" });
+    }
+};
+
 exports.updateStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;

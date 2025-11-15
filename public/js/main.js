@@ -42,6 +42,7 @@ async function fetchDeviceStatus() {
 
 // cập nhật dữ liệu hiện tại
 async function updateCurrentData() {
+    await fetchDeviceStatus();
     const response = await fetch(`http://localhost:5000/api/sensordata/latest/${gDeviceID}`);
     const result = await response.json();
 
